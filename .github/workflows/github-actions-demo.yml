@@ -1,0 +1,46 @@
+name: Run tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: 7
+          mongodb-replica-set: test-rs
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Push Prisma schema to database
+        env:
+          DATABASE_URL: mongodb://localhost:27017/mydatabase
+        run: npm run prisma:push
+
+      - name: Generate Prisma Client
+        env:
+          DATABASE_URL: mongodb://localhost:27017/mydatabase
+        run: npm run prisma:generate
+
+      - name: Seed
+        env:
+          DATABASE_URL: mongodb://localhost:27017/mydatabase
+        run: npm run prisma:seed
+
+      - name: Run Tests
+        env:
+          DATABASE_URL: mongodb://localhost:27017/mydatabase
+          CI: true
+        run: npm test
